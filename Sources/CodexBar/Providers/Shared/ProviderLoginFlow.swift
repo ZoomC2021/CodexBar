@@ -27,6 +27,10 @@ extension StatusItemController {
         case .factory:
             await self.runFactoryLoginFlow()
             return true
+        case .windsurf:
+            return false
+        case .copilot:
+            return false
         }
     }
 }

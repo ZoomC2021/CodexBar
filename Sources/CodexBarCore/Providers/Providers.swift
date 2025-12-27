@@ -8,6 +8,8 @@ public enum UsageProvider: String, CaseIterable, Sendable, Codable {
     case cursor
     case gemini
     case antigravity
+    case windsurf
+    case copilot
 }
 
 public struct ProviderMetadata: Sendable {
@@ -182,5 +184,36 @@ public enum ProviderDefaults {
             dashboardURL: "https://app.factory.ai/settings/billing",
             statusPageURL: "https://status.factory.ai",
             statusLinkURL: nil),
+        .windsurf: ProviderMetadata(
+            id: .windsurf,
+            displayName: "Windsurf",
+            sessionLabel: "Credits",
+            weeklyLabel: "Usage",
+            opusLabel: nil,
+            supportsOpus: false,
+            supportsCredits: true,
+            creditsHint: "Prompt credits used this billing cycle.",
+            toggleTitle: "Show Windsurf usage",
+            cliName: "windsurf",
+            defaultEnabled: false,
+            browserCookieOrder: .safariChromeFirefox,
+            dashboardURL: "https://windsurf.com/subscription/usage",
+            statusPageURL: nil,
+            statusLinkURL: "https://status.codeium.com"),
+        .copilot: ProviderMetadata(
+            id: .copilot,
+            displayName: "GitHub Copilot",
+            sessionLabel: "Premium requests",
+            weeklyLabel: "Usage",
+            opusLabel: nil,
+            supportsOpus: false,
+            supportsCredits: false,
+            creditsHint: "",
+            toggleTitle: "Show GitHub Copilot usage",
+            cliName: "copilot",
+            defaultEnabled: false,
+            browserCookieOrder: .safariChromeFirefox,
+            dashboardURL: "https://github.com/settings/copilot",
+            statusPageURL: "https://www.githubstatus.com"),
     ]
 }

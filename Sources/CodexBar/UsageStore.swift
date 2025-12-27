@@ -11,6 +11,7 @@ enum IconStyle {
     case antigravity
     case cursor
     case factory
+    case windsurf
     case combined
 }
 
@@ -268,6 +269,8 @@ final class UsageStore {
         case .antigravity: self.antigravityVersion
         case .cursor: self.cursorVersion
         case .factory: nil
+        case .windsurf: nil
+        case .copilot: nil
         }
     }
 
@@ -290,12 +293,20 @@ final class UsageStore {
         if self.isEnabled(.cursor), let snap = self.snapshots[.cursor] {
             return snap
         }
+        if self.isEnabled(.windsurf), let snap = self.snapshots[.windsurf] {
+            return snap
+        }
+        if self.isEnabled(.copilot), let snap = self.snapshots[.copilot] {
+            return snap
+        }
         return nil
     }
 
     var iconStyle: IconStyle {
         let enabled = self.enabledProviders()
         if enabled.count > 1 { return .combined }
+        if self.isEnabled(.copilot) { return .codex }
+        if self.isEnabled(.windsurf) { return .windsurf }
         if self.isEnabled(.cursor) { return .cursor }
         if self.isEnabled(.antigravity) { return .antigravity }
         if self.isEnabled(.gemini) { return .gemini }
@@ -310,7 +321,9 @@ final class UsageStore {
             (self.isEnabled(.zai) && self.errors[.zai] != nil) ||
             (self.isEnabled(.gemini) && self.errors[.gemini] != nil) ||
             (self.isEnabled(.antigravity) && self.errors[.antigravity] != nil) ||
-            (self.isEnabled(.cursor) && self.errors[.cursor] != nil)
+            (self.isEnabled(.cursor) && self.errors[.cursor] != nil) ||
+            (self.isEnabled(.windsurf) && self.errors[.windsurf] != nil) ||
+            (self.isEnabled(.copilot) && self.errors[.copilot] != nil)
     }
 
     func enabledProviders() -> [UsageProvider] {
@@ -1144,6 +1157,14 @@ extension UsageStore {
             case .factory:
                 let text = "Droid debug log not yet implemented"
                 await MainActor.run { self.probeLogs[.factory] = text }
+                return text
+            case .windsurf:
+                let text = "Windsurf debug log not yet implemented"
+                await MainActor.run { self.probeLogs[.windsurf] = text }
+                return text
+            case .copilot:
+                let text = "GitHub Copilot debug log not yet implemented"
+                await MainActor.run { self.probeLogs[.copilot] = text }
                 return text
             }
         }.value

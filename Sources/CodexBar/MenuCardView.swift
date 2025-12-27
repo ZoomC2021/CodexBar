@@ -31,9 +31,19 @@ struct UsageMenuCardView: View {
             let percentStyle: PercentStyle
             let resetText: String?
             let detailText: String?
+            /// Optional used count for "X / Y used" display (Windsurf, Copilot)
+            let usedCount: Double?
+            /// Optional total count for "X / Y used" display (Windsurf, Copilot)
+            let totalCount: Double?
 
             var percentLabel: String {
-                String(format: "%.0f%% %@", self.percent, self.percentStyle.labelSuffix)
+                // Show "X / Y used" format when counts are available
+                if let used = self.usedCount, let total = self.totalCount {
+                    let usedStr = used == floor(used) ? String(Int(used)) : String(format: "%.1f", used)
+                    let totalStr = total == floor(total) ? String(Int(total)) : String(format: "%.1f", total)
+                    return "\(usedStr) / \(totalStr) used"
+                }
+                return String(format: "%.0f%% %@", self.percent, self.percentStyle.labelSuffix)
             }
         }
 
@@ -593,7 +603,7 @@ extension UsageMenuCardView.Model {
         case .codex:
             if let email = snapshot?.accountEmail, !email.isEmpty { return email }
             if let email = account.email, !email.isEmpty { return email }
-        case .claude, .zai, .gemini, .antigravity, .cursor, .factory:
+        case .claude, .zai, .gemini, .antigravity, .cursor, .factory, .windsurf, .copilot:
             if let email = snapshot?.accountEmail, !email.isEmpty { return email }
         }
         return ""
@@ -604,7 +614,7 @@ extension UsageMenuCardView.Model {
         case .codex:
             if let plan = snapshot?.loginMethod, !plan.isEmpty { return self.planDisplay(plan) }
             if let plan = account.plan, !plan.isEmpty { return Self.planDisplay(plan) }
-        case .claude, .zai, .gemini, .antigravity, .cursor, .factory:
+        case .claude, .zai, .gemini, .antigravity, .cursor, .factory, .windsurf, .copilot:
             if let plan = snapshot?.loginMethod, !plan.isEmpty { return self.planDisplay(plan) }
         }
         return nil
@@ -649,7 +659,9 @@ extension UsageMenuCardView.Model {
                 input.usageBarsShowUsed ? snapshot.primary.usedPercent : snapshot.primary.remainingPercent),
             percentStyle: percentStyle,
             resetText: Self.resetText(for: snapshot.primary, prefersCountdown: true),
-            detailText: input.provider == .zai ? zaiTokenDetail : nil))
+            detailText: input.provider == .zai ? zaiTokenDetail : nil,
+            usedCount: snapshot.primary.usedCount,
+            totalCount: snapshot.primary.totalCount))
         if let weekly = snapshot.secondary {
             let paceText = UsagePaceText.weekly(provider: input.provider, window: weekly, now: input.now)
             metrics.append(Metric(
@@ -658,7 +670,9 @@ extension UsageMenuCardView.Model {
                 percent: Self.clamped(input.usageBarsShowUsed ? weekly.usedPercent : weekly.remainingPercent),
                 percentStyle: percentStyle,
                 resetText: Self.resetText(for: weekly, prefersCountdown: true),
-                detailText: input.provider == .zai ? zaiTimeDetail : paceText))
+                detailText: input.provider == .zai ? zaiTimeDetail : paceText,
+                usedCount: weekly.usedCount,
+                totalCount: weekly.totalCount))
         }
         if input.metadata.supportsOpus, let opus = snapshot.tertiary {
             metrics.append(Metric(
@@ -667,7 +681,9 @@ extension UsageMenuCardView.Model {
                 percent: Self.clamped(input.usageBarsShowUsed ? opus.usedPercent : opus.remainingPercent),
                 percentStyle: percentStyle,
                 resetText: Self.resetText(for: opus, prefersCountdown: true),
-                detailText: nil))
+                detailText: nil,
+                usedCount: opus.usedCount,
+                totalCount: opus.totalCount))
         }
 
         if input.provider == .codex, let remaining = input.dashboard?.codeReviewRemainingPercent {
@@ -678,7 +694,9 @@ extension UsageMenuCardView.Model {
                 percent: Self.clamped(percent),
                 percentStyle: percentStyle,
                 resetText: nil,
-                detailText: nil))
+                detailText: nil,
+                usedCount: nil,
+                totalCount: nil))
         }
         return metrics
     }
@@ -788,6 +806,10 @@ extension UsageMenuCardView.Model {
             Color(red: 0 / 255, green: 191 / 255, blue: 165 / 255) // #00BFA5 - Cursor teal
         case .factory:
             Color(red: 255 / 255, green: 107 / 255, blue: 53 / 255) // Factory orange
+        case .windsurf:
+            Color(red: 92 / 255, green: 135 / 255, blue: 255 / 255)
+        case .copilot:
+            Color(red: 45 / 255, green: 164 / 255, blue: 78 / 255)
         }
     }
 

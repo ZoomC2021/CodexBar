@@ -51,8 +51,21 @@ enum CLIRenderer {
     }
 
     static func rateLine(title: String, window: RateWindow) -> String {
+        // If we have raw counts, show "X / Y used" format instead of percentage
+        if let used = window.usedCount, let total = window.totalCount {
+            let usedStr = Self.formatCount(used)
+            let totalStr = Self.formatCount(total)
+            return "\(title): \(usedStr) / \(totalStr) used"
+        }
         let text = UsageFormatter.usageLine(remaining: window.remainingPercent, used: window.usedPercent)
         return "\(title): \(text)"
+    }
+
+    private static func formatCount(_ value: Double) -> String {
+        if value == floor(value) {
+            return String(Int(value))
+        }
+        return String(format: "%.1f", value)
     }
 
     private static func resetLine(_ reset: String) -> String {

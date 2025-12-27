@@ -104,8 +104,8 @@ struct ProvidersPane: View {
             return "\(versionText) • \(usageText)"
         }
 
-        // Cursor is web-based, no CLI version to detect
-        if provider == .cursor {
+        // Web-only providers don't have CLI versions to detect.
+        if provider == .cursor || provider == .windsurf || provider == .copilot {
             return "web • \(usageText)"
         }
         if provider == .zai {
@@ -137,6 +137,10 @@ struct ProvidersPane: View {
         case .antigravity:
             return "local"
         case .factory:
+            return "web"
+        case .windsurf:
+            return "web"
+        case .copilot:
             return "web"
         }
     }

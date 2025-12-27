@@ -6,16 +6,34 @@ public struct RateWindow: Codable, Equatable, Sendable {
     public let resetsAt: Date?
     /// Optional textual reset description (used by Claude CLI UI scrape).
     public let resetDescription: String?
+    /// Optional raw used count (e.g., "45" requests used). Used by providers like Windsurf/Copilot.
+    public let usedCount: Double?
+    /// Optional raw total count (e.g., "500" requests total). Used by providers like Windsurf/Copilot.
+    public let totalCount: Double?
 
-    public init(usedPercent: Double, windowMinutes: Int?, resetsAt: Date?, resetDescription: String?) {
+    public init(
+        usedPercent: Double,
+        windowMinutes: Int?,
+        resetsAt: Date?,
+        resetDescription: String?,
+        usedCount: Double? = nil,
+        totalCount: Double? = nil)
+    {
         self.usedPercent = usedPercent
         self.windowMinutes = windowMinutes
         self.resetsAt = resetsAt
         self.resetDescription = resetDescription
+        self.usedCount = usedCount
+        self.totalCount = totalCount
     }
 
     public var remainingPercent: Double {
         max(0, 100 - self.usedPercent)
+    }
+
+    public var remainingCount: Double? {
+        guard let used = self.usedCount, let total = self.totalCount else { return nil }
+        return max(0, total - used)
     }
 }
 

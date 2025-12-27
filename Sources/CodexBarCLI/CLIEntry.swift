@@ -98,11 +98,8 @@ enum CodexBarCLI {
         #endif
         let claudeFetcher = ClaudeUsageFetcher(dataSource: claudeSource)
 
-        #if !os(macOS)
-        if sourceMode.usesWeb {
-            Self.exit(code: .failure, message: "Error: --source web/auto is only supported on macOS.")
-        }
-        #endif
+        // Web source for Codex (OpenAI dashboard) is macOS-only due to WebKit requirement.
+        // Claude web source now works on Linux via Chrome cookie extraction.
 
         var sections: [String] = []
         var payload: [ProviderPayload] = []
@@ -264,6 +261,10 @@ enum CodexBarCLI {
             nil
         case .factory:
             nil
+        case .windsurf:
+            nil
+        case .copilot:
+            nil
         }
     }
 
@@ -276,6 +277,8 @@ enum CodexBarCLI {
         case .antigravity: "antigravity"
         case .cursor: "cursor"
         case .factory: "factory"
+        case .windsurf: "windsurf"
+        case .copilot: "copilot"
         }
         guard let raw, !raw.isEmpty else { return (nil, source) }
         if let match = raw.range(of: #"(\d+(?:\.\d+)+)"#, options: .regularExpression) {
@@ -468,6 +471,38 @@ enum CodexBarCLI {
             }
         }
 
+        if provider == .windsurf {
+            do {
+                let probe = WindsurfStatusProbe()
+                let logger: ((String) -> Void)? = context.verbose ? { line in
+                    Self.writeStderr(line + "\n")
+                } : nil
+                let snap = try await probe.fetch(logger: logger)
+                return ProviderFetchOutcome(
+                    result: .success((usage: snap.toUsageSnapshot(), credits: nil)),
+                    dashboard: nil,
+                    sourceOverride: nil)
+            } catch {
+                return ProviderFetchOutcome(result: .failure(error), dashboard: nil, sourceOverride: nil)
+            }
+        }
+
+        if provider == .copilot {
+            do {
+                let probe = CopilotStatusProbe()
+                let logger: ((String) -> Void)? = context.verbose ? { line in
+                    Self.writeStderr(line + "\n")
+                } : nil
+                let snap = try await probe.fetch(logger: logger)
+                return ProviderFetchOutcome(
+                    result: .success((usage: snap.toUsageSnapshot(), credits: nil)),
+                    dashboard: nil,
+                    sourceOverride: nil)
+            } catch {
+                return ProviderFetchOutcome(result: .failure(error), dashboard: nil, sourceOverride: nil)
+            }
+        }
+
         let result = await Self.fetch(
             provider: provider,
             includeCredits: context.includeCredits,
@@ -531,6 +566,14 @@ enum CodexBarCLI {
                 return .success((usage: snap.toUsageSnapshot(), credits: nil))
             case .factory:
                 let probe = FactoryStatusProbe()
+                let snap = try await probe.fetch()
+                return .success((usage: snap.toUsageSnapshot(), credits: nil))
+            case .windsurf:
+                let probe = WindsurfStatusProbe()
+                let snap = try await probe.fetch()
+                return .success((usage: snap.toUsageSnapshot(), credits: nil))
+            case .copilot:
+                let probe = CopilotStatusProbe()
                 let snap = try await probe.fetch()
                 return .success((usage: snap.toUsageSnapshot(), credits: nil))
             }
@@ -855,7 +898,7 @@ enum CodexBarCLI {
         CodexBar \(version)
 
         Usage:
-          codexbar usage [--format text|json] [--provider codex|claude|zai|gemini|antigravity|both|all]
+          codexbar usage [--format text|json] [--provider codex|claude|zai|cursor|gemini|antigravity|factory|windsurf|copilot|both|all]
                        [--no-credits] [--pretty] [--status] [--source <auto|web|cli|oauth>]
                        [--web-timeout <seconds>] [--web-debug-dump-html] [--antigravity-plan-debug]
 
@@ -882,7 +925,7 @@ enum CodexBarCLI {
         CodexBar \(version)
 
         Usage:
-          codexbar [--format text|json] [--provider codex|claude|zai|gemini|antigravity|both|all]
+          codexbar [--format text|json] [--provider codex|claude|zai|cursor|gemini|antigravity|factory|windsurf|copilot|both|all]
                   [--no-credits] [--pretty] [--status] [--source <auto|web|cli|oauth>]
                   [--web-timeout <seconds>] [--web-debug-dump-html] [--antigravity-plan-debug]
 
@@ -908,11 +951,13 @@ private struct UsageOptions: CommanderParsable {
         #if os(macOS)
         "Data source: auto | web | cli | oauth (auto uses web then falls back on missing cookies)"
         #else
-        "Data source: auto | web | cli | oauth (web/auto are macOS only)"
+        "Data source: auto | web | cli | oauth (web uses Chrome cookies for Claude; Codex web is macOS only)"
         #endif
     }()
 
-    @Option(name: .long("provider"), help: "Provider to query: codex | claude | gemini | antigravity | both | all")
+    @Option(
+        name: .long("provider"),
+        help: "Provider to query: codex | claude | zai | cursor | gemini | antigravity | factory | windsurf | copilot | both | all")
     var provider: ProviderSelection?
 
     @Option(name: .long("format"), help: "Output format: text | json")
@@ -951,6 +996,8 @@ enum ProviderSelection: Sendable, ExpressibleFromArgument {
     case antigravity
     case cursor
     case factory
+    case windsurf
+    case copilot
     case both
     case all
     case custom([UsageProvider])
@@ -964,6 +1011,8 @@ enum ProviderSelection: Sendable, ExpressibleFromArgument {
         case "antigravity": self = .antigravity
         case "cursor": self = .cursor
         case "factory": self = .factory
+        case "windsurf": self = .windsurf
+        case "copilot": self = .copilot
         case "both": self = .both
         case "all": self = .all
         default: return nil
@@ -979,6 +1028,8 @@ enum ProviderSelection: Sendable, ExpressibleFromArgument {
         case .antigravity: self = .antigravity
         case .cursor: self = .cursor
         case .factory: self = .factory
+        case .windsurf: self = .windsurf
+        case .copilot: self = .copilot
         }
     }
 
@@ -991,8 +1042,10 @@ enum ProviderSelection: Sendable, ExpressibleFromArgument {
         case .antigravity: [.antigravity]
         case .cursor: [.cursor]
         case .factory: [.factory]
+        case .windsurf: [.windsurf]
+        case .copilot: [.copilot]
         case .both: [.codex, .claude]
-        case .all: [.codex, .claude, .zai, .cursor, .gemini, .antigravity, .factory]
+        case .all: [.codex, .claude, .zai, .cursor, .gemini, .antigravity, .factory, .windsurf, .copilot]
         case let .custom(providers): providers
         }
     }

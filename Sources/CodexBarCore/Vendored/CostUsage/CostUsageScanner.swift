@@ -54,6 +54,10 @@ enum CostUsageScanner {
             return CCUsageDailyReport(data: [], summary: nil)
         case .factory:
             return CCUsageDailyReport(data: [], summary: nil)
+        case .windsurf:
+            return CCUsageDailyReport(data: [], summary: nil)
+        case .copilot:
+            return CCUsageDailyReport(data: [], summary: nil)
         }
     }
 

@@ -60,6 +60,10 @@ extension UsageStore {
             return "Cursor cost summary is not supported."
         case .factory:
             return "Droid cost summary is not supported."
+        case .windsurf:
+            return "Windsurf cost summary is not supported."
+        case .copilot:
+            return "GitHub Copilot cost summary is not supported."
         }
     }
 }

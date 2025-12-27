@@ -44,6 +44,8 @@ enum ProviderBrandIcon {
         case .factory: "ProviderIcon-factory"
         case .gemini: "ProviderIcon-gemini"
         case .antigravity: "ProviderIcon-antigravity"
+        case .windsurf: "ProviderIcon-cursor"
+        case .copilot: "ProviderIcon-codex"
         }
     }
 }

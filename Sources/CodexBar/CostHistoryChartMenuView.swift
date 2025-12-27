@@ -200,6 +200,10 @@ struct CostHistoryChartMenuView: View {
             Color(red: 0 / 255, green: 191 / 255, blue: 165 / 255) // #00BFA5 - Cursor teal
         case .factory:
             Color(red: 255 / 255, green: 107 / 255, blue: 53 / 255) // Factory orange
+        case .windsurf:
+            Color(red: 92 / 255, green: 135 / 255, blue: 255 / 255)
+        case .copilot:
+            Color(red: 45 / 255, green: 164 / 255, blue: 78 / 255)
         }
     }
 

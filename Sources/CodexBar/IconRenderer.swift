@@ -687,6 +687,7 @@ enum IconRenderer {
         case .cursor: 5
         case .combined: 6
         case .factory: 7
+        case .windsurf: 8
         }
     }
 

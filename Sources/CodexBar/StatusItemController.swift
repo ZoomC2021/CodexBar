@@ -310,6 +310,8 @@ final class StatusItemController: NSObject, NSMenuDelegate, StatusItemControllin
         case .antigravity: "Antigravity"
         case .cursor: "Cursor"
         case .factory: "Droid"
+        case .windsurf: "Windsurf"
+        case .copilot: "GitHub Copilot"
         }
         return "\(prefix): \(base)"
     }
