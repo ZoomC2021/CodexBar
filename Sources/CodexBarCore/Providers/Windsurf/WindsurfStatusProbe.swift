@@ -1245,7 +1245,7 @@ dirs = [
 ]
 
 # Regex for JWT token (starts with eyJ, contains dots, alphanumeric)
-token_re = re.compile(br'eyJ[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+')
+token_re = re.compile(br'eyJ[a-zA-Z0-9_-]+[.][a-zA-Z0-9_-]+[.][a-zA-Z0-9_-]+')
 
 candidates = []
 
