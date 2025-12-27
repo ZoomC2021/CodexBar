@@ -274,7 +274,7 @@ public struct ClaudeUsageFetcher: ClaudeUsageFetching, Sendable {
             updatedAt: Date(),
             accountEmail: nil,
             accountOrganization: nil,
-            loginMethod: Self.inferPlan(rateLimitTier: credentials.rateLimitTier),
+            loginMethod: Self.inferPlan(rateLimitTier: credentials.rateLimitTier, subscriptionType: credentials.subscriptionType),
             rawText: nil)
     }
 
@@ -293,7 +293,18 @@ public struct ClaudeUsageFetcher: ClaudeUsageFetching, Sendable {
             updatedAt: Date())
     }
 
-    private static func inferPlan(rateLimitTier: String?) -> String? {
+    private static func inferPlan(rateLimitTier: String?, subscriptionType: String? = nil) -> String? {
+        // First check subscriptionType (e.g., "pro", "max", "team")
+        if let sub = subscriptionType?.lowercased(), !sub.isEmpty {
+            if sub.contains("max") { return "Claude Max" }
+            if sub.contains("pro") { return "Claude Pro" }
+            if sub.contains("team") { return "Claude Team" }
+            if sub.contains("enterprise") { return "Claude Enterprise" }
+            // Return capitalized subscription type if it's a known type
+            if sub == "free" { return "Claude Free" }
+            return "Claude \(subscriptionType!.capitalized)"
+        }
+        // Fall back to rateLimitTier
         let tier = rateLimitTier?.lowercased() ?? ""
         if tier.contains("max") { return "Claude Max" }
         if tier.contains("pro") { return "Claude Pro" }
