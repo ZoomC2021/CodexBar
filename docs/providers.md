@@ -1,5 +1,5 @@
 ---
-summary: "Provider data sources and parsing overview (Codex, Claude, Gemini, Antigravity, Cursor, Droid/Factory)."
+summary: "Provider data sources and parsing overview (Codex, Claude, Gemini, Antigravity, Cursor, Copilot, Windsurf, Droid/Factory)."
 read_when:
   - Adding or modifying provider fetch/parsing
   - Adjusting provider labels, toggles, or metadata
@@ -48,6 +48,13 @@ read_when:
 - Supports Pro, Enterprise, Team, and Hobby membership types.
 - Status: Statuspage.io (Cursor).
 - Details in `docs/cursor.md`.
+
+## GitHub Copilot
+- Web-based: fetches usage from `github.com/settings/copilot` using browser session cookies.
+- Cookie import: Safari → Chrome → Firefox; requires `github.com` session cookies.
+- Parses premium requests usage percentage and monthly reset timing.
+- Shows account login and active plan when available.
+- Status: status page at `https://www.githubstatus.com`.
 
 ## Droid (Factory)
 - Web-based: fetches usage from app.factory.ai (and auth/api hosts when needed) using browser session cookies or WorkOS refresh tokens from local storage.

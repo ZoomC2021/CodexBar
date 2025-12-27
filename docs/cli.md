@@ -34,7 +34,8 @@ tar -xzf CodexBarCLI-0.14.1-linux-x86_64.tar.gz
 ## Command
 - `codexbar` defaults to the `usage` command.
   - `--format text|json` (default: text).
-  - `--provider codex|claude|gemini|antigravity|both|all` (default: your in-app toggles; falls back to Codex).
+- `--provider codex|claude|zai|cursor|gemini|antigravity|factory|windsurf|copilot|both|all`
+  (default: your in-app toggles; falls back to Codex).
   - `--no-credits` (hide Codex credits in text output).
   - `--pretty` (pretty-print JSON).
   - `--status` (fetch provider status pages and include them in output).
