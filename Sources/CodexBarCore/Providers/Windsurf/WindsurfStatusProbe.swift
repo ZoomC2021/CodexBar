@@ -951,9 +951,12 @@ public struct WindsurfStatusProbe: Sendable {
         #endif
 
         // Find the user prompt credits value
-        // Credit type ID 391 appears to be "User Prompt credits" (value 4.0 was found with ID 391)
+        // Usage is now primarily returned in Field 6 as cents (integer)
         var creditsUsed = context.creditsUsed
-        if let userPromptCredits = context.creditsValuesByType[391] {
+
+        if context.usageCents > 0 {
+            creditsUsed = Double(context.usageCents) / 100.0
+        } else if let userPromptCredits = context.creditsValuesByType[391] {
             creditsUsed = Double(userPromptCredits)
         } else if let altCredits = context.creditsValuesByType[400] {
              // Fallback to 400 if 391 missing
@@ -994,6 +997,7 @@ public struct WindsurfStatusProbe: Sendable {
         var varintValues: [Int] = []
         var creditsValuesByType: [Int: Float] = [:] // Map credit type ID to value
         var lastVarintInNestedMessage: Int = 0 // Track last varint for credit type ID
+        var usageCents: Int = 0 // Field 6 (usage in cents)
     }
 
     private func parseProtobufMessage(
@@ -1034,9 +1038,19 @@ public struct WindsurfStatusProbe: Sendable {
                     context.lastVarintInNestedMessage = intVal
                 }
 
+                // Field 6: Usage in cents (new format)
+                if fieldNumber == 6 {
+                    context.usageCents = intVal
+                }
+
                 // Look for credits total (usually 500 or 600 for pro)
-                if fieldNumber == 8 && intVal >= 400 && intVal <= 1000 {
-                    context.creditsTotal = Double(intVal)
+                if fieldNumber == 8 {
+                    if intVal >= 400 && intVal <= 1000 {
+                        context.creditsTotal = Double(intVal)
+                    } else if intVal >= 40000 && intVal <= 200000 {
+                         // Scaled value (cents), e.g. 50000 -> 500.0
+                         context.creditsTotal = Double(intVal) / 100.0
+                    }
                 }
 
                 // Look for Unix timestamp (billing cycle end)
@@ -1052,8 +1066,18 @@ public struct WindsurfStatusProbe: Sendable {
 
             case 1: // 64-bit (fixed64, sfixed64, double)
                 guard offset + 8 <= endOffset else { break }
+                let doubleBytes = Array(bytes[offset..<(offset + 8)])
                 offset += 8
-                // Skip for now - not seeing doubles in the response
+                let doubleValue = doubleBytes.withUnsafeBytes { $0.load(as: Double.self) }
+
+                // Check if it's a reasonable credit value (could be credits used)
+                if doubleValue >= 0 && doubleValue <= 10000 && !doubleValue.isNaN && !doubleValue.isInfinite {
+                    // If we saw a varint ID recently, associate it with this double
+                    if context.lastVarintInNestedMessage > 0 {
+                        context.creditsValuesByType[context.lastVarintInNestedMessage] = Float(doubleValue)
+                    }
+                    context.lastVarintInNestedMessage = 0
+                }
 
             case 2: // Length-delimited (string, bytes, embedded messages)
                 var length: Int = 0

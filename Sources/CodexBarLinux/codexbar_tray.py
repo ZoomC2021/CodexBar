@@ -122,6 +122,8 @@ class UsageData:
 
     def format_primary_usage(self) -> str:
         """Format primary usage as 'X / Y used' if counts available, else 'X%'"""
+        if self.provider == "copilot":
+            return f"{self.primary_remaining:.1f}%"
         if self.has_primary_counts():
             used = int(self.primary_used_count) if self.primary_used_count == int(self.primary_used_count) else self.primary_used_count
             total = int(self.primary_total_count) if self.primary_total_count == int(self.primary_total_count) else self.primary_total_count
@@ -132,6 +134,8 @@ class UsageData:
         """Format secondary usage as 'X / Y used' if counts available, else 'X%'"""
         if self.secondary_percent is None:
             return None
+        if self.provider == "copilot":
+            return f"{self.secondary_remaining:.1f}%"
         if self.has_secondary_counts():
             used = int(self.secondary_used_count) if self.secondary_used_count == int(self.secondary_used_count) else self.secondary_used_count
             total = int(self.secondary_total_count) if self.secondary_total_count == int(self.secondary_total_count) else self.secondary_total_count
@@ -614,8 +618,8 @@ class GtkTray:
                 bar = self._make_bar(usage.primary_remaining)
                 reset = usage.primary_reset.replace("Resets ", "") if usage.primary_reset else ""
                 primary_label = labels.get("primary", "Session")
-                # Use count format for providers with counts (Windsurf, Copilot)
-                if usage.has_primary_counts():
+                # Use format method for counts or providers with custom formatting (Copilot)
+                if usage.has_primary_counts() or provider == "copilot":
                     usage_text = usage.format_primary_usage()
                     line = f"    {primary_label}: {bar} {usage_text}"
                 else:
@@ -632,8 +636,8 @@ class GtkTray:
                     bar = self._make_bar(usage.secondary_remaining)
                     reset = usage.secondary_reset.replace("Resets ", "") if usage.secondary_reset else ""
                     sec_label = labels.get("secondary", "Weekly")
-                    # Use count format for providers with counts
-                    if usage.has_secondary_counts():
+                    # Use format method for counts or providers with custom formatting (Copilot)
+                    if usage.has_secondary_counts() or provider == "copilot":
                         usage_text = usage.format_secondary_usage()
                         line = f"    {sec_label}: {bar} {usage_text}"
                     else:
