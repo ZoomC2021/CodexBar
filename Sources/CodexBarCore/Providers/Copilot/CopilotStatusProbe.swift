@@ -315,6 +315,7 @@ public enum CopilotCookieImporter {
         return stdout.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    // swiftlint:disable:next function_body_length
     private static func cookieImportScript() -> String {
         """
         import json

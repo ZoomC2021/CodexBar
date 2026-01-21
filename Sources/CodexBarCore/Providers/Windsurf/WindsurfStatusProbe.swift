@@ -348,6 +348,7 @@ public enum WindsurfCookieImporter {
         return stdout.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    // swiftlint:disable:next function_body_length
     private static func cookieImportScript() -> String {
         """
         import json
@@ -633,9 +634,11 @@ public enum WindsurfStatusProbeError: LocalizedError, Sendable {
             "Could not parse Windsurf usage: \(msg)"
         case .noSessionCookie:
             #if os(macOS)
-            "No Windsurf session found. Set WINDSURF_TOKEN with your Firebase access token, or log in to windsurf.com in \(windsurfCookieImportOrder.loginHint)."
+            "No Windsurf session found. Set WINDSURF_TOKEN with your Firebase access token, "
+                + "or log in to windsurf.com in \(windsurfCookieImportOrder.loginHint)."
             #elseif os(Linux)
-            "No Windsurf session found. Set WINDSURF_TOKEN with your Firebase access token from your browser's IndexedDB."
+            "No Windsurf session found. Set WINDSURF_TOKEN with your Firebase access token "
+                + "from your browser's IndexedDB."
             #else
             "No Windsurf session found. Set WINDSURF_TOKEN environment variable."
             #endif
@@ -835,7 +838,8 @@ public struct WindsurfStatusProbe: Sendable {
                                 return result
                             } catch {
                                 log(
-                                    "Retry: Fresh cookies from \(session.sourceLabel) failed: \(error.localizedDescription)")
+                                    "Retry: Fresh cookies from \(session.sourceLabel) failed: "
+                                        + "\(error.localizedDescription)")
                             }
                         }
                     } catch {
@@ -1039,6 +1043,7 @@ public struct WindsurfStatusProbe: Sendable {
         var usageCents: Int = 0 // Field 6 (usage in cents)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func parseProtobufMessage(
         bytes: [UInt8],
         startOffset: Int,

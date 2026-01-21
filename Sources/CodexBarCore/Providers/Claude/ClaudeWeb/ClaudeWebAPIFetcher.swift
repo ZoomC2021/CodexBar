@@ -12,6 +12,7 @@ import FoundationNetworking
 /// API endpoints used:
 /// - `GET https://claude.ai/api/organizations` → get org UUID
 /// - `GET https://claude.ai/api/organizations/{org_id}/usage` → usage percentages + reset times
+// swiftlint:disable:next type_body_length
 public enum ClaudeWebAPIFetcher {
     private static let baseURL = "https://claude.ai/api"
     private static let maxProbeBytes = 200_000
@@ -1092,6 +1093,7 @@ public enum ClaudeWebAPIFetcher {
         return stdout.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    // swiftlint:disable:next function_body_length
     private static func cookieImportScript() -> String {
         """
         import json
