@@ -118,27 +118,7 @@ public struct ProviderMetadata: Sendable {
 
 public enum ProviderDefaults {
     public static func getMetadata() -> [UsageProvider: ProviderMetadata] {
-        var meta = ProviderDescriptorRegistry.metadata
-        
-        // Add fork-specific metadata
-        meta[.windsurf] = ProviderMetadata(
-            id: .windsurf,
-            displayName: "Windsurf",
-            sessionLabel: "Credits",
-            weeklyLabel: "Usage",
-            opusLabel: nil,
-            supportsOpus: false,
-            supportsCredits: true,
-            creditsHint: "Prompt credits used this billing cycle.",
-            toggleTitle: "Show Windsurf usage",
-            cliName: "windsurf",
-            defaultEnabled: false,
-            browserCookieOrder: .safariChromeFirefox,
-            dashboardURL: "https://windsurf.com/subscription/usage",
-            statusPageURL: nil,
-            statusLinkURL: "https://status.codeium.com")
-            
-        return meta
+        ProviderDescriptorRegistry.metadata
     }
         
     public static var metadata: [UsageProvider: ProviderMetadata] {
