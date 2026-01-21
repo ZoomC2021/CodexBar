@@ -247,7 +247,7 @@ enum CostUsageScanner {
     private static func fileIdentityString(fileURL: URL) -> String? {
         guard let values = try? fileURL.resourceValues(forKeys: [.fileResourceIdentifierKey]) else { return nil }
         guard let identifier = values.fileResourceIdentifier else { return nil }
-        if let data = identifier as? Data {
+        if let data = (identifier as Any) as? Data {
             return data.base64EncodedString()
         }
         return String(describing: identifier)

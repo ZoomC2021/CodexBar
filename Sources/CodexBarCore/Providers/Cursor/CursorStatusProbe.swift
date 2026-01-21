@@ -956,7 +956,6 @@ public struct CursorStatusProbe: Sendable {
         let log: (String) -> Void = { msg in logger?("[cursor] \(msg)") }
         #if os(Linux)
         var browserImportError: Error?
-        var browserAttemptError: Error?
         #endif
 
         if let override = CookieHeaderNormalizer.normalize(cookieHeaderOverride) {
@@ -1026,9 +1025,6 @@ public struct CursorStatusProbe: Sendable {
         }
 
         #if os(Linux)
-        if let browserAttemptError {
-            throw browserAttemptError
-        }
         if let browserImportError {
             throw browserImportError
         }
