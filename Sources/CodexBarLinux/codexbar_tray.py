@@ -57,8 +57,9 @@ def _resolve_linux_source(provider_id: str, config_source: Optional[str]) -> str
     # If config asks for auto/web, map to Linux-safe equivalents.
     if provider_id == "claude":
         return "oauth"
-    if provider_id in {"zai", "minimax", "vertexai"}:
+    if provider_id in {"zai", "minimax", "vertexai", "gemini", "copilot", "kimik2", "synthetic"}:
         return "api"
+    # amp, cursor, antigravity, codex, etc. use cli with manual cookie/env fallback
     return "cli"
 
 

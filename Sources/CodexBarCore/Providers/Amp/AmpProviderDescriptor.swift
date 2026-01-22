@@ -32,7 +32,7 @@ public enum AmpProviderDescriptor {
                 supportsTokenCost: false,
                 noDataMessage: { "Amp cost summary is not supported." }),
             fetchPlan: ProviderFetchPlan(
-                sourceModes: [.auto, .web],
+                sourceModes: [.auto, .web, .cli],
                 pipeline: ProviderFetchPipeline(resolveStrategies: { _ in [AmpStatusFetchStrategy()] })),
             cli: ProviderCLIConfig(
                 name: "amp",

@@ -25,8 +25,53 @@ public enum AmpUsageError: LocalizedError, Sendable {
         case let .networkError(message):
             "Amp request failed: \(message)"
         case .noSessionCookie:
+            #if os(Linux)
+            "No Amp session cookie found. Set AMP_COOKIE_HEADER or cookieHeader in config.json."
+            #else
             "No Amp session cookie found. Please log in to ampcode.com in your browser."
+            #endif
         }
+    }
+}
+
+public enum AmpEnvironment {
+    private static let cookieHeaderKeys = [
+        "AMP_COOKIE_HEADER",
+        "AMP_COOKIE",
+    ]
+
+    public static func cookieHeader(environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
+        for key in self.cookieHeaderKeys {
+            guard let raw = environment[key], let cleaned = self.cleaned(raw) else { continue }
+            let stripped = self.stripCookiePrefix(cleaned)
+            if !stripped.isEmpty {
+                return stripped
+            }
+        }
+        return nil
+    }
+
+    private static func cleaned(_ raw: String) -> String? {
+        var value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+
+        if (value.hasPrefix("\"") && value.hasSuffix("\"")) ||
+            (value.hasPrefix("'") && value.hasSuffix("'"))
+        {
+            value.removeFirst()
+            value.removeLast()
+        }
+
+        value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : value
+    }
+
+    private static func stripCookiePrefix(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lower = trimmed.lowercased()
+        guard lower.hasPrefix("cookie:") else { return trimmed }
+        let start = trimmed.index(trimmed.startIndex, offsetBy: "cookie:".count)
+        return trimmed[start...].trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
@@ -209,6 +254,17 @@ public struct AmpUsageFetcher: Sendable {
             }
             throw AmpUsageError.noSessionCookie
         }
+
+        // Check environment variable (works on all platforms)
+        if let envCookie = AmpEnvironment.cookieHeader() {
+            if let sessionHeader = self.sessionCookieHeader(from: envCookie) {
+                logger?("[amp] Using session cookie from environment")
+                return sessionHeader
+            }
+            // Env var set but no session cookie found
+            logger?("[amp] AMP_COOKIE_HEADER set but missing 'session' cookie")
+        }
+
         #if os(macOS)
         let session = try AmpCookieImporter.importSession(browserDetection: self.browserDetection, logger: logger)
         logger?("[amp] Using cookies from \(session.sourceLabel)")

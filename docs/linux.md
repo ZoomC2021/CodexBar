@@ -17,10 +17,11 @@ CodexBar provides full Linux support via the CLI and a Python-based system tray 
 | Codex | Yes | CLI-based, requires `codex` binary in PATH |
 | Claude | Yes | CLI + OAuth, requires `claude` binary in PATH |
 | Cursor | Yes | Chrome cookie import or `CURSOR_COOKIE_HEADER` env var |
-| Gemini | Yes | CLI-based, requires `gemini` binary in PATH |
+| Gemini | Yes | API-based, requires `gemini` CLI login (`~/.gemini/oauth_creds.json`) |
+| Amp | Yes | `AMP_COOKIE_HEADER` env var or `cookieHeader` in config.json |
 | Antigravity | Yes | Local language server probe |
 | Windsurf | Yes | Firebase token from Chrome IndexedDB or `WINDSURF_TOKEN` env var |
-| GitHub Copilot | Yes | Chrome cookie import |
+| GitHub Copilot | Yes | API token via `apiKey` in config or `COPILOT_API_TOKEN` env var |
 | z.ai | Yes | API token required |
 | Factory/Droid | No | macOS only (requires Safari/WebKit) |
 
@@ -189,13 +190,47 @@ codexbar usage --provider windsurf
 # 3. Find the access_token value
 ```
 
-### GitHub Copilot
+### Amp
 
-GitHub Copilot requires GitHub session cookies:
+Amp requires a session cookie from ampcode.com:
 
 ```bash
-# Sign in to github.com in Chrome
-# CodexBar auto-imports the session cookies
+# Option 1: Environment variable
+export AMP_COOKIE_HEADER="session=your-session-cookie-value"
+codexbar usage --provider amp --source cli
+
+# Option 2: Config file (~/.codexbar/config.json)
+# Add cookieHeader to the amp provider entry:
+# {
+#   "id": "amp",
+#   "enabled": true,
+#   "source": "cli",
+#   "cookieSource": "manual",
+#   "cookieHeader": "session=your-session-cookie-value"
+# }
+
+# To get the session cookie:
+# 1. Open Chrome DevTools on ampcode.com (logged in)
+# 2. Application > Cookies > ampcode.com
+# 3. Copy the value of the "session" cookie
+```
+
+### GitHub Copilot
+
+GitHub Copilot requires a GitHub OAuth token:
+
+```bash
+# Option 1: Config file (~/.codexbar/config.json)
+# Add apiKey to the copilot provider entry:
+# {
+#   "id": "copilot",
+#   "enabled": true,
+#   "source": "api",
+#   "apiKey": "gho_your_github_oauth_token"
+# }
+
+# Option 2: Environment variable
+export COPILOT_API_TOKEN="gho_your_github_oauth_token"
 codexbar usage --provider copilot
 ```
 
