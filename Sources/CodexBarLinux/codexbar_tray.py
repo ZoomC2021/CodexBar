@@ -11,18 +11,27 @@ import subprocess
 import sys
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+
+# Configuration
+REFRESH_INTERVAL_SECONDS = 60
+CLI_TIMEOUT_SECONDS = 30
 
 
 def _safe_iso_to_datetime(updated_at_str: Optional[str]) -> Optional[datetime]:
     if not updated_at_str:
         return None
     try:
-        clean = updated_at_str.replace("Z", "").split("+")[0].split(".")[0]
-        return datetime.fromisoformat(clean)
-    except Exception:
+        clean = updated_at_str.strip()
+        if clean.endswith("Z"):
+            clean = clean[:-1] + "+00:00"
+        dt = datetime.fromisoformat(clean)
+        if dt.tzinfo is not None:
+            return dt.astimezone(timezone.utc).replace(tzinfo=None)
+        return dt
+    except (ValueError, TypeError):
         return None
 
 
@@ -60,7 +69,7 @@ def _load_enabled_provider_configs(cli_path: str) -> list[dict]:
     """
     try:
         result = subprocess.run(
-            [cli_path, "config", "dump", "--format", "json", "--json-only"],
+            [cli_path, "config", "dump", "--json-only"],
             capture_output=True,
             text=True,
             timeout=CLI_TIMEOUT_SECONDS,
@@ -85,7 +94,7 @@ def _load_enabled_provider_configs(cli_path: str) -> list[dict]:
                 continue
             enabled.append(entry)
         return enabled
-    except Exception:
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError, OSError, ValueError, TypeError):
         return []
 
 # Try to import GTK/AppIndicator for proper Ubuntu tray support
@@ -111,11 +120,6 @@ except ImportError:
     print("Missing dependencies. Install with: pip install pystray pillow")
     print("On Ubuntu you may also need: sudo apt install python3-gi gir1.2-ayatanaappindicator3-0.1")
     sys.exit(1)
-
-# Configuration
-REFRESH_INTERVAL_SECONDS = 60
-CLI_TIMEOUT_SECONDS = 30
-
 
 # Provider-specific labels for usage tiers
 PROVIDER_LABELS = {
@@ -329,8 +333,9 @@ class CodexBarTray:
             "windsurf",
         ]
         for pid in priority:
-            if pid in self.usage_data:
-                return self.usage_data[pid]
+            for usage in self.usage_data.values():
+                if usage.provider == pid:
+                    return usage
         return next(iter(self.usage_data.values()))
 
     def _get_color(self, remaining: float) -> tuple:
@@ -378,8 +383,6 @@ class CodexBarTray:
                         "usage",
                         "--provider",
                         provider,
-                        "--format",
-                        "json",
                         "--json-only",
                         "--source",
                         source,
@@ -408,12 +411,12 @@ class CodexBarTray:
             except subprocess.TimeoutExpired:
                 errors.append(f"{provider}: timeout")
             except json.JSONDecodeError:
-                pass  # Skip invalid JSON
+                errors.append(f"{provider}: invalid json")
             except FileNotFoundError:
                 self.last_error = f"CLI not found: {self.cli_path}"
                 self.last_update = datetime.now()
                 return
-            except Exception as e:
+            except (OSError, ValueError, TypeError) as e:
                 errors.append(f"{provider}: {e}")
 
         if all_data:
@@ -701,8 +704,6 @@ class GtkTray:
                         "usage",
                         "--provider",
                         provider,
-                        "--format",
-                        "json",
                         "--json-only",
                         "--source",
                         source,
@@ -731,12 +732,12 @@ class GtkTray:
             except subprocess.TimeoutExpired:
                 errors.append(f"{provider}: timeout")
             except json.JSONDecodeError:
-                pass  # Skip invalid JSON
+                errors.append(f"{provider}: invalid json")
             except FileNotFoundError:
                 self.last_error = f"CLI not found: {self.cli_path}"
                 self.last_update = datetime.now()
                 return
-            except Exception as e:
+            except (OSError, ValueError, TypeError) as e:
                 errors.append(f"{provider}: {e}")
 
         if all_data:
@@ -942,7 +943,7 @@ class GtkTray:
             clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
             clipboard.set_text(cmd, -1)
             clipboard.store()
-        except Exception:
+        except (AttributeError, RuntimeError, TypeError):
             # Fallback: print to terminal
             print(f"CLI command: {cmd}")
 
