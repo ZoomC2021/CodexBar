@@ -1,4 +1,3 @@
-import AppKit
 import CodexBarCore
 import CodexBarMacroSupport
 import SwiftUI
@@ -7,14 +6,6 @@ import SwiftUI
 struct CopilotProviderImplementation: ProviderImplementation {
     let id: UsageProvider = .copilot
     let supportsLoginFlow: Bool = true
-
-    func makeFetch(context: ProviderBuildContext) -> @Sendable () async throws -> UsageSnapshot {
-        {
-            let probe = CopilotStatusProbe()
-            let snap = try await probe.fetch()
-            return snap.toUsageSnapshot()
-        }
-    }
 
     @MainActor
     func presentation(context _: ProviderPresentationContext) -> ProviderPresentation {
