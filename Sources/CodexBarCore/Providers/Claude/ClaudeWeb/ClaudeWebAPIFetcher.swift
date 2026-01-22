@@ -12,8 +12,8 @@ import FoundationNetworking
 /// API endpoints used:
 /// - `GET https://claude.ai/api/organizations` → get org UUID
 /// - `GET https://claude.ai/api/organizations/{org_id}/usage` → usage percentages + reset times
-// swiftlint:disable:next type_body_length
-public enum ClaudeWebAPIFetcher {
+///
+public enum ClaudeWebAPIFetcher { // swiftlint:disable:this type_body_length
     private static let baseURL = "https://claude.ai/api"
     private static let maxProbeBytes = 200_000
     #if os(macOS)
