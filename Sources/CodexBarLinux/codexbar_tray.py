@@ -421,7 +421,11 @@ class CodexBarTray:
 
         if all_data:
             self._parse_usage_data(all_data)
-            self.last_error = None
+            if self.provider_errors:
+                first = list(self.provider_errors.items())[:2]
+                self.last_error = "; ".join([f"{p}: {m}" for p, m in first])
+            else:
+                self.last_error = None
         elif self.provider_errors:
             # Show first two provider errors.
             first = list(self.provider_errors.items())[:2]
@@ -742,7 +746,11 @@ class GtkTray:
 
         if all_data:
             self._parse_usage_data(all_data)
-            self.last_error = None
+            if self.provider_errors:
+                first = list(self.provider_errors.items())[:2]
+                self.last_error = "; ".join([f"{p}: {m}" for p, m in first])
+            else:
+                self.last_error = None
         elif self.provider_errors:
             first = list(self.provider_errors.items())[:2]
             self.last_error = "; ".join([f"{p}: {m}" for p, m in first])

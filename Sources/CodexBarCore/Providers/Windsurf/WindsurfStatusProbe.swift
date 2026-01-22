@@ -3,6 +3,10 @@ import Foundation
 import FoundationNetworking
 #endif
 
+#if os(macOS)
+import SweetCookieKit
+#endif
+
 #if os(macOS) || os(Linux)
 
 private let windsurfCookieImportOrder: BrowserCookieImportOrder =
@@ -72,6 +76,7 @@ enum WindsurfEnvironment {
 
 /// Imports Windsurf session cookies from browser cookies.
 public enum WindsurfCookieImporter {
+    private static let cookieClient = BrowserCookieClient()
     // Common session cookie names - Windsurf/Codeium uses various authentication schemes
     private static let sessionCookieNames: Set<String> = [
         "__Secure-next-auth.session-token",
@@ -98,15 +103,18 @@ public enum WindsurfCookieImporter {
     public static func importSessions(logger: ((String) -> Void)? = nil) throws -> [SessionInfo] {
         let log: (String) -> Void = { msg in logger?("[windsurf-cookie] \(msg)") }
         var sessions: [SessionInfo] = []
+        let browserDetection = BrowserDetection()
+        let installedBrowsers = windsurfCookieImportOrder.cookieImportCandidates(using: browserDetection)
         let cookieDomains = ["windsurf.com", "codeium.com"]
-        for browserSource in windsurfCookieImportOrder.sources {
+        for browserSource in installedBrowsers {
             do {
-                let sources = try BrowserCookieImporter.loadCookieSources(
-                    from: browserSource,
-                    matchingDomains: cookieDomains,
+                let query = BrowserCookieQuery(domains: cookieDomains)
+                let sources = try Self.cookieClient.records(
+                    matching: query,
+                    in: browserSource,
                     logger: log)
                 for source in sources where !source.records.isEmpty {
-                    let httpCookies = BrowserCookieImporter.makeHTTPCookies(source.records)
+                    let httpCookies = BrowserCookieClient.makeHTTPCookies(source.records, origin: query.origin)
                     if httpCookies.contains(where: { Self.sessionCookieNames.contains($0.name) }) {
                         log("Found \(httpCookies.count) Windsurf cookies in \(source.label)")
                         sessions.append(SessionInfo(cookies: httpCookies, sourceLabel: source.label))
@@ -115,6 +123,7 @@ public enum WindsurfCookieImporter {
                     }
                 }
             } catch {
+                BrowserCookieAccessGate.recordIfNeeded(error)
                 log("\(browserSource.displayName) cookie import failed: \(error.localizedDescription)")
             }
         }

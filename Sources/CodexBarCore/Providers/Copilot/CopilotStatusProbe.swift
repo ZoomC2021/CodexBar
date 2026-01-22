@@ -3,6 +3,10 @@ import Foundation
 import FoundationNetworking
 #endif
 
+#if os(macOS)
+import SweetCookieKit
+#endif
+
 #if os(macOS) || os(Linux)
 
 private let copilotCookieImportOrder: BrowserCookieImportOrder =
@@ -54,6 +58,7 @@ enum CopilotEnvironment {
 // MARK: - Copilot Cookie Importer
 
 public enum CopilotCookieImporter {
+    private static let cookieClient = BrowserCookieClient()
     private static let sessionCookieNames: Set<String> = [
         "user_session",
         "__Host-user_session",
@@ -77,15 +82,18 @@ public enum CopilotCookieImporter {
     public static func importSessions(logger: ((String) -> Void)? = nil) throws -> [SessionInfo] {
         let log: (String) -> Void = { msg in logger?("[copilot-cookie] \(msg)") }
         var sessions: [SessionInfo] = []
+        let browserDetection = BrowserDetection()
+        let installedBrowsers = copilotCookieImportOrder.cookieImportCandidates(using: browserDetection)
         let cookieDomains = ["github.com"]
-        for browserSource in copilotCookieImportOrder.sources {
+        for browserSource in installedBrowsers {
             do {
-                let sources = try BrowserCookieImporter.loadCookieSources(
-                    from: browserSource,
-                    matchingDomains: cookieDomains,
+                let query = BrowserCookieQuery(domains: cookieDomains)
+                let sources = try Self.cookieClient.records(
+                    matching: query,
+                    in: browserSource,
                     logger: log)
                 for source in sources where !source.records.isEmpty {
-                    let httpCookies = BrowserCookieImporter.makeHTTPCookies(source.records)
+                    let httpCookies = BrowserCookieClient.makeHTTPCookies(source.records, origin: query.origin)
                     if httpCookies.contains(where: { Self.sessionCookieNames.contains($0.name) }) {
                         log("Found \(httpCookies.count) GitHub cookies in \(source.label)")
                         sessions.append(SessionInfo(cookies: httpCookies, sourceLabel: source.label))
@@ -94,6 +102,7 @@ public enum CopilotCookieImporter {
                     }
                 }
             } catch {
+                BrowserCookieAccessGate.recordIfNeeded(error)
                 log("\(browserSource.displayName) cookie import failed: \(error.localizedDescription)")
             }
         }
