@@ -127,15 +127,16 @@ struct ProvidersPane: View {
         let detailLine = presentation.detailLine(presentationContext)
 
         // Web-only providers don't have CLI versions to detect.
-        if !ProviderDescriptorRegistry.descriptor(for: provider).isNative {
+        let descriptor = ProviderDescriptorRegistry.descriptor(for: provider)
+        if descriptor.cli.versionDetector == nil {
             return "web • \(usageText)"
         }
         if provider == .zai {
             return "api • \(usageText)"
         }
 
-        if let line = detailLine {
-            var detail = "\(line) • \(usageText)"
+        if !detailLine.isEmpty {
+            var detail = "\(detailLine) • \(usageText)"
             if provider == .antigravity {
                 detail += " • experimental"
             }
@@ -168,7 +169,8 @@ struct ProvidersPane: View {
         case .copilot:
             return "web"
         default:
-            if !ProviderDescriptorRegistry.descriptor(for: provider).isNative {
+            let descriptor = ProviderDescriptorRegistry.descriptor(for: provider)
+            if descriptor.cli.versionDetector == nil {
                 return "web"
             }
             return "auto"
